@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# === Script to Create an IAM User with VPC Full Access ===
+# This script uses the AWS CLI to create a new user and attach
+# the AWS managed policy 'AmazonVPCFullAccess'.
+
+# --- Configuration ---
+# Set the desired username for the new IAM user.
+# You can change "VpcAdminBeginner" to whatever you like.
+NEW_USER_NAME="VpcAdminBeginner"
+
+# This is the ARN (Amazon Resource Name) for the AWS managed policy
+# that grants full access to VPC services. This usually doesn't change.
+POLICY_ARN="arn:aws:iam::aws:policy/AmazonVPCFullAccess"
+
+# --- Explaining the Goal ---
+echo "-----------------------------------------------------"
+echo "This script will attempt to:"
+echo "1. Create an IAM user named: $NEW_USER_NAME"
+echo "2. Attach the policy '$POLICY_ARN' to this user."
+echo "Make sure your AWS CLI is installed and configured!"
+echo "-----------------------------------------------------"
+echo # Print an empty line for spacing
+
+# --- Step 1: Create the IAM User ---
+echo "Attempting to create the IAM user: $NEW_USER_NAME ..."
+
+# Explanation of the 'aws iam create-user' command:
+# 'aws'     : This is the command to invoke the AWS CLI tool.
+# 'iam'     : This specifies that we want to interact with the IAM service.
+# 'create-user': This is the specific action we want to perform within IAM.
+# '--user-name': This is an option (or parameter) for the 'create-user' action.
+#                It tells AWS what name to give the new user.
+# "$NEW_USER_NAME": This is the value for the '--user-name' option. We use the
+#                   variable we defined earlier. Using double quotes helps if
+#                   the username ever contains spaces (though it's best to avoid).
+aws iam create-user --user-name "$NEW_USER_NAME"
+
+# Check the result of the last command ($? contains the exit code)
+# An exit code of 0 usually means success. Any other number indicates an error.
+if [ $? -eq 0 ]; then
+  echo "SUCCESS: IAM user '$NEW_USER_NAME' created (or already exists)."
+else
+  echo "ERROR: Failed to create IAM user '$NEW_USER_NAME'. Check AWS CLI configuration and permissions."
+  # Exit the script if user creation failed, as attaching the policy won't work.
+  exit 1
+fi
+echo # Print an empty line for spacing
+
+# --- Step 2: Attach the Policy to the User ---
+echo "Attempting to attach policy '$POLICY_ARN' to user '$NEW_USER_NAME' ..."
+
+# Explanation of the 'aws iam attach-user-policy' command:
+# 'aws'          : Again, invokes the AWS CLI tool.
+# 'iam'          : Specifies the IAM service.
+# 'attach-user-policy': The specific action to attach a policy to a user.
+# '--user-name'  : Specifies which user to attach the policy to.
+# "$NEW_USER_NAME" : The name of the user we just created.
+# '--policy-arn' : Specifies which policy to attach. Policies are identified by their ARN.
+# "$POLICY_ARN"  : The ARN of the AmazonVPCFullAccess policy we defined earlier.
+aws iam attach-user-policy --user-name "$NEW_USER_NAME" --policy-arn "$POLICY_ARN"
+
+# Check the result of the policy attachment
+if [ $? -eq 0 ]; then
+  echo "SUCCESS: Policy '$POLICY_ARN' attached to user '$NEW_USER_NAME'."
+else
+  echo "ERROR: Failed to attach policy '$POLICY_ARN' to user '$NEW_USER_NAME'."
+  # Exit with an error code if attachment failed.
+  exit 1
+fi
+echo # Print an empty line for spacing
+
+# --- Final Message ---
+echo "-----------------------------------------------------"
+echo "Script finished!"
+echo "User '$NEW_USER_NAME' should now have the AmazonVPCFullAccess policy."
+echo "IMPORTANT: This script does NOT create Access Keys (for security)."
+echo "If this user needs programmatic access (to use the AWS CLI or SDKs),"
+echo "you must create Access Keys manually via the AWS Console or AWS CLI"
+echo "('aws iam create-access-key --user-name $NEW_USER_NAME') and handle them securely."
+echo "-----------------------------------------------------"
+
+# Exit successfully
+exit 0
